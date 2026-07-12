@@ -1,0 +1,105 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <title>Monitor MQTT</title>
+
+    <!-- Socket.IO -->
+    <script src="/socket.io/socket.io.js"></script>
+
+    <style>
+        body{
+            font-family: Arial;
+            margin:40px;
+            background:#f5f5f5;
+        }
+
+        h1{
+            color:#333;
+        }
+
+        .card{
+            background:white;
+            padding:20px;
+            border-radius:10px;
+            width:400px;
+            box-shadow:0px 0px 10px rgba(0,0,0,.2);
+        }
+
+        input{
+            width:100%;
+            padding:8px;
+            margin:5px 0;
+        }
+
+        button{
+            padding:10px 20px;
+            cursor:pointer;
+        }
+
+        #mensajes{
+            margin-top:20px;
+            background:#eee;
+            padding:10px;
+            height:250px;
+            overflow:auto;
+        }
+    </style>
+
+</head>
+<body>
+
+<div class="card">
+
+<h1>Monitor MQTT</h1>
+
+<h3>Datos recibidos</h3>
+
+<div id="mensajes"></div>
+
+<hr>
+
+<h3>Enviar MQTT</h3>
+
+
+<input id="mensaje" placeholder="Mensaje">
+
+<button onclick="enviar()">Alerta</button>
+
+</div>
+
+<script>
+
+const socket = io();
+
+const mensajes = document.getElementById("mensajes");
+
+// Cuando llega un mensaje MQTT desde el servidor
+socket.on("aforo",(data)=>{
+    
+    mensajes.innerHTML += `
+        <p>
+            ${data.message}
+        </p>
+    `;
+
+    mensajes.scrollTop = mensajes.scrollHeight;
+
+});
+
+
+// Enviar un mensaje MQTT
+function enviar(){
+
+    const mensaje = document.getElementById("mensaje").value;
+
+    socket.emit("alarma",{
+        message:mensaje
+    });
+
+}
+
+</script>
+
+</body>
+</html>

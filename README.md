@@ -23,8 +23,13 @@ Iot-Ayuda/
 ├── package.json             # Scripts raíz (start, build, db:*)
 ├── .env.example             # Plantilla de configuración (copiar a .env en la raíz)
 ├── Firmware/
-│   ├── esp8266.ino          # Firmware aforo (2 puertas, FC-51)
-│   └── esp32cam.ino         # Firmware cámara (HTTP POST de frames JPEG)
+│   ├── README.md            # Guía completa de flasheo
+│   ├── esp8266/
+│   │   ├── esp8266.ino
+│   │   └── config.h         # WiFi, IP del PC, SITIO_ID (editar antes de subir)
+│   └── esp32cam/
+│       ├── esp32cam.ino
+│       └── config.h
 ├── backend/                 # API Node.js + MQTT + Socket.IO
 │   ├── index.js             # Punto de entrada del servidor
 │   ├── config.js            # Variables de entorno (lee .env de la raíz)
@@ -262,13 +267,15 @@ Abrir `http://localhost:5173` (Vite proxy hacia la API en `:3000`).
 
 ### 6. Flashear firmware
 
-**ESP8266** (`Firmware/esp8266.ino`):
-- Configurar `SITIO_ID`, `CLIENT_ID`, WiFi y `mqtt_server`
-- `SITIO_ID` y `CLIENT_ID` deben coincidir con la tabla `sitios`
+Guía paso a paso: **[Firmware/README.md](Firmware/README.md)**
 
-**ESP32-CAM** (`Firmware/esp32cam.ino`):
-- Configurar `SITIO_ID`, `CLIENT_ID`, `SERVER_URL` y WiFi
-- `CLIENT_ID` debe coincidir con `esp32cam_client_id` en la BD
+Resumen:
+
+1. Obtén la IP de tu PC (`ipconfig`) — los ESP usan esa IP, no `localhost`.
+2. Edita `Firmware/esp8266/config.h` y `Firmware/esp32cam/config.h` (WiFi + IP + sitio).
+3. Abre cada carpeta en Arduino IDE y sube al dispositivo.
+
+Por defecto ambos apuntan al **sitio 1** (`esp8266-sitio-1` / `esp32cam-sitio-1`).
 
 ---
 

@@ -1,25 +1,13 @@
 /****************************************************
- ESP8266
- Control de aforo con 2 puertas independientes
- Sensores FC-51 — Multi-sitio (topics MQTT por sitio_id)
+ ESP8266 — Control de aforo (2 puertas, FC-51)
+ Multi-sitio · topics MQTT: aforo/{sitio_id}/...
+ Configura WiFi y sitio en config.h antes de subir.
 ****************************************************/
 
 #include <ESP8266WiFi.h>
 #include <PubSubClient.h>
+#include "config.h"
 
-//-------------------- CONFIGURACIÓN -----------------
-const char* ssid = "TU_RED_WIFI";
-const char* password = "TU_CONTRASEÑA";
-
-const char* mqtt_server = "192.168.100.3";
-
-// ID del sitio turístico (debe coincidir con la tabla sitios en PostgreSQL)
-const int SITIO_ID = 1;
-
-// Client ID único (debe coincidir con esp8266_client_id en la BD)
-const char* CLIENT_ID = "esp8266-sitio-1";
-
-// Topics MQTT: aforo/{sitio_id}/aforo | alarma | setear
 char topicAforo[32];
 char topicAlarma[32];
 char topicSetear[32];
@@ -32,8 +20,6 @@ PubSubClient client(espClient);
 #define P2_A 14
 #define P2_B 12
 #define BUZZER 13
-
-//----------------------------------------------------
 
 int aforo = 0;
 int aforo_actual = 0;
@@ -51,7 +37,9 @@ struct Puerta {
 Puerta puerta1 = {P1_A, P1_B, IDLE, 0};
 Puerta puerta2 = {P2_A, P2_B, IDLE, 0};
 
-//----------------------------------------------------
+bool buzzerActivo = false;
+unsigned long buzzerInicio = 0;
+const unsigned long BUZZER_DURACION = 2000;
 
 void construirTopics() {
   snprintf(topicAforo, sizeof(topicAforo), "aforo/%d/aforo", SITIO_ID);
@@ -116,8 +104,8 @@ void callback(char* topic, byte* payload, unsigned int length) {
 
   if (canal == topicAlarma) {
     digitalWrite(BUZZER, HIGH);
-    delay(2000);
-    digitalWrite(BUZZER, LOW);
+    buzzerActivo = true;
+    buzzerInicio = millis();
   }
 
   if (canal == topicSetear) {
@@ -158,17 +146,21 @@ void setup() {
   pinMode(BUZZER, OUTPUT);
   digitalWrite(BUZZER, LOW);
 
-  WiFi.begin(ssid, password);
+  WiFi.begin(WIFI_SSID, WIFI_PASSWORD);
+  Serial.print("Conectando WiFi");
   while (WiFi.status() != WL_CONNECTED) {
     delay(500);
     Serial.print(".");
   }
   Serial.println();
+  Serial.print("IP ESP8266: ");
   Serial.println(WiFi.localIP());
   Serial.print("Sitio ID: ");
   Serial.println(SITIO_ID);
+  Serial.print("MQTT: ");
+  Serial.println(MQTT_SERVER);
 
-  client.setServer(mqtt_server, 1883);
+  client.setServer(MQTT_SERVER, 1883);
   client.setCallback(callback);
 }
 
@@ -178,6 +170,11 @@ void loop() {
 
   procesarPuerta(puerta1);
   procesarPuerta(puerta2);
+
+  if (buzzerActivo && millis() - buzzerInicio >= BUZZER_DURACION) {
+    digitalWrite(BUZZER, LOW);
+    buzzerActivo = false;
+  }
 
   if (aforo_actual != aforo) {
     aforo_actual = aforo;

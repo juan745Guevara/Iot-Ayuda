@@ -1,30 +1,13 @@
 /****************************************************
- ESP32-CAM (AI-Thinker)
- Envío de frames JPEG al servidor por HTTP POST
- Multi-sitio turístico
+ ESP32-CAM (AI-Thinker) — Video en vivo por HTTP POST
+ Configura WiFi y sitio en config.h antes de subir.
 ****************************************************/
 
 #include "esp_camera.h"
 #include <WiFi.h>
 #include <HTTPClient.h>
+#include "config.h"
 
-//-------------------- CONFIGURACIÓN -----------------
-const char* ssid = "TU_RED_WIFI";
-const char* password = "TU_CONTRASEÑA";
-
-// URL del servidor Node.js (sin barra final)
-const char* SERVER_URL = "http://192.168.100.3:3000";
-
-// ID del sitio turístico (debe coincidir con la tabla sitios en PostgreSQL)
-const int SITIO_ID = 1;
-
-// Client ID único (debe coincidir con esp32cam_client_id en la BD)
-const char* CLIENT_ID = "esp32cam-sitio-1";
-
-// Intervalo entre frames (ms)
-const unsigned long INTERVALO_MS = 250;
-
-// Pines AI-Thinker ESP32-CAM
 #define PWDN_GPIO_NUM     32
 #define RESET_GPIO_NUM    -1
 #define XCLK_GPIO_NUM      0
@@ -41,8 +24,6 @@ const unsigned long INTERVALO_MS = 250;
 #define VSYNC_GPIO_NUM    25
 #define HREF_GPIO_NUM     23
 #define PCLK_GPIO_NUM     22
-
-//----------------------------------------------------
 
 unsigned long ultimoFrame = 0;
 char endpointUrl[128];
@@ -73,6 +54,10 @@ bool iniciarCamara() {
   config.jpeg_quality = 12;
   config.fb_count = 1;
 
+  if (psramFound()) {
+    config.fb_count = 2;
+  }
+
   esp_err_t err = esp_camera_init(&config);
   if (err != ESP_OK) {
     Serial.printf("Error cámara: 0x%x\n", err);
@@ -82,19 +67,20 @@ bool iniciarCamara() {
 }
 
 void conectarWiFi() {
-  WiFi.begin(ssid, password);
+  WiFi.begin(WIFI_SSID, WIFI_PASSWORD);
   Serial.print("Conectando WiFi");
   while (WiFi.status() != WL_CONNECTED) {
     delay(500);
     Serial.print(".");
   }
   Serial.println();
-  Serial.print("IP: ");
+  Serial.print("IP ESP32-CAM: ");
   Serial.println(WiFi.localIP());
 }
 
 bool enviarFrame(camera_fb_t* fb) {
   HTTPClient http;
+  http.setTimeout(5000);
   http.begin(endpointUrl);
   http.addHeader("Content-Type", "image/jpeg");
   http.addHeader("X-Client-Id", CLIENT_ID);
@@ -113,6 +99,8 @@ bool enviarFrame(camera_fb_t* fb) {
 
 void setup() {
   Serial.begin(115200);
+  delay(1000);
+
   snprintf(endpointUrl, sizeof(endpointUrl), "%s/api/camara/%d/frame", SERVER_URL, SITIO_ID);
 
   if (!iniciarCamara()) {
@@ -124,6 +112,8 @@ void setup() {
   conectarWiFi();
   Serial.print("Enviando frames a: ");
   Serial.println(endpointUrl);
+  Serial.print("Client ID: ");
+  Serial.println(CLIENT_ID);
 }
 
 void loop() {

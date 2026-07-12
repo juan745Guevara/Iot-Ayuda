@@ -55,7 +55,7 @@ export default function SeguridadDashboard() {
   const sitioUnico = sitios.length === 1;
 
   function enviarAlarma(sitioId) {
-    socket.emit('alarma', { sitio_id: sitioId, mensaje: '1' });
+    socket.emit('alarma', { sitio_id: sitioId, mensaje: '1', token: getToken() });
     setAlarmaMsg(sitioId);
     setTimeout(() => setAlarmaMsg(null), 2000);
   }

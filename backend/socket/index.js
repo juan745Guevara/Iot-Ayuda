@@ -57,11 +57,33 @@ function initSocket(io) {
       }
     });
 
-    // Enviar alarma desde dashboard de seguridad
-    socket.on('alarma', (data) => {
+    // Enviar alarma desde dashboard de seguridad (requiere JWT + rol + asignación)
+    socket.on('alarma', async (data) => {
       const sitioId = parseInt(data?.sitio_id, 10);
-      if (!isNaN(sitioId)) {
+      const token = data?.token;
+
+      if (!token || isNaN(sitioId)) {
+        socket.emit('error_alarma', { error: 'Token y sitio_id requeridos' });
+        return;
+      }
+
+      try {
+        const user = jwt.verify(token, config.jwtSecret);
+
+        if (user.rol !== 'seguridad' && user.rol !== 'admin') {
+          socket.emit('error_alarma', { error: 'Rol no autorizado' });
+          return;
+        }
+
+        const tieneAcceso = await verificarAccesoSitio(user, sitioId);
+        if (!tieneAcceso) {
+          socket.emit('error_alarma', { error: 'Sin acceso a este sitio' });
+          return;
+        }
+
         publicarAlarma(sitioId, data?.mensaje || '1');
+      } catch {
+        socket.emit('error_alarma', { error: 'Token inválido' });
       }
     });
 

@@ -1,6 +1,6 @@
 # Iot-Ayuda — Monitoreo de Aforo Turístico Multi-Sitio
 
-Sistema de monitoreo de aforo para **varios establecimientos turísticos**. Cada sitio tiene un **ESP8266** (conteo con sensores FC-51) y un **ESP32-CAM** (video en vivo). El backend en Node.js conecta **MQTT**, **PostgreSQL** y **Socket.IO** para ofrecer un panel público de aforo y un dashboard de seguridad con cámara.
+Sistema de monitoreo de aforo para **varios establecimientos turísticos**. Cada sitio tiene un **ESP8266** (conteo con sensores FC-51) y un **ESP32-CAM** (video en vivo). El **backend** en Node.js conecta **MQTT**, **PostgreSQL** y **Socket.IO**; el **frontend** en React (Vite) ofrece panel público, detalle por sitio y dashboards de seguridad/admin.
 
 ---
 
@@ -20,24 +20,27 @@ Sistema de monitoreo de aforo para **varios establecimientos turísticos**. Cada
 
 ```
 Iot-Ayuda/
+├── package.json             # Scripts raíz (start, build, db:*)
 ├── .env.example             # Plantilla de configuración (copiar a .env en la raíz)
 ├── Firmware/
 │   ├── esp8266.ino          # Firmware aforo (2 puertas, FC-51)
 │   └── esp32cam.ino         # Firmware cámara (HTTP POST de frames JPEG)
 ├── backend/                 # API Node.js + MQTT + Socket.IO
 │   ├── index.js             # Punto de entrada del servidor
-│   ├── config.js            # Variables de entorno
+│   ├── config.js            # Variables de entorno (lee .env de la raíz)
 │   ├── package.json
 │   ├── db/
 │   │   ├── schema.sql       # Esquema completo PostgreSQL
 │   │   ├── seed.js          # Inicialización (tablas + datos demo)
+│   │   ├── sitios-demo.js   # 12 sitios de Tingo María
+│   │   ├── seguridad-demo.js
 │   │   └── ...
 │   ├── routes/              # REST API
 │   ├── middleware/          # JWT y roles
-│   ├── services/            # Lógica de negocio (aforo-stats)
+│   ├── services/            # aforo-stats (historial, stats diarias)
 │   ├── mqtt/                # Cliente MQTT
 │   └── socket/              # Rooms Socket.IO
-└── frontend/                # React (Vite)
+└── frontend/                # React + Vite
     ├── src/
     │   ├── pages/           # Home, Login, SitioDetalle, Seguridad, Admin
     │   ├── components/
@@ -79,7 +82,10 @@ Iot-Ayuda/
 |-------|-------------|
 | `sitios` | Destinos turísticos con aforo, client IDs de hardware |
 | `usuarios` | Usuarios con rol (`usuario`, `seguridad`, `admin`) |
-| `seguridad_sitios` | Asignación muchos-a-muchos seguridad ↔ sitios |
+| `seguridad_sitios` | Asignación 1:1 guardia ↔ sitio |
+| `historial_aforo` | Registro de cada cambio de aforo (para gráficos) |
+| `stats_diario` | Visitas y pico de aforo por día |
+| `alertas_aforo` | Alertas al cruzar 60 % y 85 % de capacidad |
 
 ### Roles
 
@@ -112,6 +118,8 @@ El servidor se suscribe a `aforo/+/aforo` y actualiza la BD + Socket.IO room `si
 | GET | `/api/sitios` | Lista sitios activos con aforo |
 | GET | `/api/sitios/:id` | Detalle de un sitio |
 | GET | `/api/sitios/:id/aforo` | Solo aforo actual/máximo |
+| GET | `/api/sitios/:id/estadisticas` | Stats del día (visitas, pico, alertas) |
+| GET | `/api/sitios/:id/historial?periodo=dia\|semana\|mes` | Datos para gráfico de historial |
 
 ### Autenticación
 
@@ -240,6 +248,18 @@ npm run dev:frontend
 
 Abrir `http://localhost:5173` (Vite proxy hacia la API en `:3000`).
 
+### Scripts disponibles (desde la raíz)
+
+| Comando | Descripción |
+|---------|-------------|
+| `npm start` | Inicia el backend en `:3000` |
+| `npm run dev:frontend` | Frontend con hot reload en `:5173` |
+| `npm run build` | Compila React a `frontend/dist/` |
+| `npm run db:seed` | Crea tablas y datos demo |
+| `npm run db:add-sitios` | Añade sitios faltantes |
+| `npm run db:migrar-seguridad` | Crea cuentas guardia 1:1 |
+| `npm run db:migrate-stats` | Tablas de historial + datos iniciales |
+
 ### 6. Flashear firmware
 
 **ESP8266** (`Firmware/esp8266.ino`):
@@ -256,11 +276,19 @@ Abrir `http://localhost:5173` (Vite proxy hacia la API en `:3000`).
 
 | URL | Acceso | Descripción |
 |-----|--------|-------------|
-| `/` | Público | Listado de sitios con búsqueda y filtros |
-| `/sitio/:id` | Público | Detalle: gauge, estadísticas e historial |
+| `/` | Público | Listado con búsqueda, filtros y stats en tiempo real |
+| `/sitio/:id` | Público | Gauge, estadísticas del día e historial gráfico |
 | `/login` | Público | Login para seguridad y admin |
 | `/seguridad` | Seguridad/Admin | Cámara en vivo + aforo + alarma |
-| `/admin` | Admin | Crear sitios y asignar seguridad |
+| `/admin` | Admin | Crear sitios y asignar guardias (1:1) |
+
+En producción, Express sirve `frontend/dist/` y hace fallback SPA para todas las rutas.
+
+---
+
+## Historial de aforo
+
+Cada vez que el ESP8266 publica un cambio por MQTT (`aforo/{id}/aforo`), el backend guarda una fila en `historial_aforo`. El gráfico de `/sitio/:id` consulta esa tabla agrupada por hora (día), o por día (semana/mes).
 
 ---
 

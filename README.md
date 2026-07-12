@@ -20,34 +20,31 @@ Sistema de monitoreo de aforo para **varios establecimientos turísticos**. Cada
 
 ```
 Iot-Ayuda/
-├── index.js                 # Punto de entrada del servidor
-├── config.js                # Variables de entorno
-├── .env.example             # Plantilla de configuración
-├── esp8266.ino              # Firmware aforo (2 puertas, FC-51)
-├── esp32cam.ino             # Firmware cámara (HTTP POST de frames JPEG)
-├── db/
-│   ├── schema.sql           # Tablas PostgreSQL
-│   ├── seed.js              # Datos iniciales (sitios + usuarios)
-│   └── index.js             # Pool de conexión pg
-├── middleware/
-│   └── auth.js              # JWT + validación de roles
-├── routes/
-│   ├── auth.js              # POST /api/auth/login
-│   ├── sitios.js            # Sitios y aforo (público + cámara protegida)
-│   ├── seguridad.js         # GET /api/seguridad/mis-sitios
-│   ├── camara.js            # POST /api/camara/:sitio_id/frame
-│   └── admin.js             # CRUD sitios y asignaciones
-├── mqtt/
-│   └── client.js            # Cliente MQTT + actualización de BD
-├── socket/
-│   └── index.js             # Rooms Socket.IO (aforo + cámara)
-└── public/
-    ├── index.html           # Panel público de aforo
-    ├── login.html           # Login seguridad/admin
-    ├── seguridad/dashboard.html
-    ├── admin/index.html
-    ├── css/styles.css
-    └── js/common.js
+├── .env.example             # Plantilla de configuración (copiar a .env en la raíz)
+├── Firmware/
+│   ├── esp8266.ino          # Firmware aforo (2 puertas, FC-51)
+│   └── esp32cam.ino         # Firmware cámara (HTTP POST de frames JPEG)
+├── backend/                 # API Node.js + MQTT + Socket.IO
+│   ├── index.js             # Punto de entrada del servidor
+│   ├── config.js            # Variables de entorno
+│   ├── package.json
+│   ├── db/
+│   │   ├── schema.sql       # Esquema completo PostgreSQL
+│   │   ├── seed.js          # Inicialización (tablas + datos demo)
+│   │   └── ...
+│   ├── routes/              # REST API
+│   ├── middleware/          # JWT y roles
+│   ├── services/            # Lógica de negocio (aforo-stats)
+│   ├── mqtt/                # Cliente MQTT
+│   └── socket/              # Rooms Socket.IO
+└── frontend/                # React (Vite)
+    ├── src/
+    │   ├── pages/           # Home, Login, SitioDetalle, Seguridad, Admin
+    │   ├── components/
+    │   ├── hooks/
+    │   └── utils/
+    ├── vite.config.js       # Proxy API + Socket.IO en desarrollo
+    └── dist/                # Build de producción (npm run build)
 ```
 
 ---
@@ -181,7 +178,8 @@ Rooms:
 ```bash
 git clone https://github.com/juan745Guevara/Iot-Ayuda.git
 cd Iot-Ayuda
-npm install
+npm install --prefix backend
+npm install --prefix frontend
 ```
 
 ### 2. Configurar entorno
@@ -214,36 +212,55 @@ Esto crea las tablas y datos de ejemplo:
 | Usuario | Contraseña | Rol |
 |---------|------------|-----|
 | `admin@iot.local` | `admin123` | admin |
-| `seguridad@iot.local` | `seg123` | seguridad (sitios 1 y 2) |
+| `seg.*@iot.local` | `seg123` | seguridad (1 guardia por sitio) |
 
-Sitios de ejemplo: Catarata de Ahuashiyacu, Cuevas de Toledo, Jardín Botánico.
+12 sitios turísticos de la zona de Tingo María (ver `backend/db/sitios-demo.js`).
 
-### 4. Iniciar Mosquitto y el servidor
+### 4. Compilar frontend React
+
+```bash
+npm run build
+```
+
+### 5. Iniciar Mosquitto y el servidor
 
 ```bash
 npm start
 ```
 
-### 5. Flashear firmware
+**Desarrollo** (backend + hot reload del frontend):
 
-**ESP8266** (`esp8266.ino`):
+```bash
+# Terminal 1
+npm start
+
+# Terminal 2
+npm run dev:frontend
+```
+
+Abrir `http://localhost:5173` (Vite proxy hacia la API en `:3000`).
+
+### 6. Flashear firmware
+
+**ESP8266** (`Firmware/esp8266.ino`):
 - Configurar `SITIO_ID`, `CLIENT_ID`, WiFi y `mqtt_server`
 - `SITIO_ID` y `CLIENT_ID` deben coincidir con la tabla `sitios`
 
-**ESP32-CAM** (`esp32cam.ino`):
+**ESP32-CAM** (`Firmware/esp32cam.ino`):
 - Configurar `SITIO_ID`, `CLIENT_ID`, `SERVER_URL` y WiFi
 - `CLIENT_ID` debe coincidir con `esp32cam_client_id` en la BD
 
 ---
 
-## Páginas web
+## Páginas web (React)
 
 | URL | Acceso | Descripción |
 |-----|--------|-------------|
-| `/` | Público | Tarjetas de aforo con indicador verde/amarillo/rojo |
-| `/login.html` | Público | Login para seguridad y admin |
-| `/seguridad/dashboard.html` | Seguridad/Admin | Cámara en vivo + aforo + alarma |
-| `/admin/index.html` | Admin | Crear sitios y asignar seguridad |
+| `/` | Público | Listado de sitios con búsqueda y filtros |
+| `/sitio/:id` | Público | Detalle: gauge, estadísticas e historial |
+| `/login` | Público | Login para seguridad y admin |
+| `/seguridad` | Seguridad/Admin | Cámara en vivo + aforo + alarma |
+| `/admin` | Admin | Crear sitios y asignar seguridad |
 
 ---
 

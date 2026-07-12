@@ -1,0 +1,24 @@
+{
+  "name": "iot-ayuda-backend",
+  "version": "2.0.0",
+  "description": "Backend Node.js — API, MQTT, Socket.IO y PostgreSQL",
+  "license": "ISC",
+  "type": "commonjs",
+  "main": "index.js",
+  "scripts": {
+    "start": "node index.js",
+    "db:seed": "node db/seed.js",
+    "db:add-sitios": "node db/add-sitios.js",
+    "db:migrar-seguridad": "node db/migrar-seguridad.js",
+    "db:migrate-stats": "node db/migrate-stats.js"
+  },
+  "dependencies": {
+    "bcryptjs": "^3.0.2",
+    "dotenv": "^17.2.1",
+    "express": "^5.2.1",
+    "jsonwebtoken": "^9.0.2",
+    "mqtt": "^5.15.2",
+    "pg": "^8.16.3",
+    "socket.io": "^4.8.3"
+  }
+}

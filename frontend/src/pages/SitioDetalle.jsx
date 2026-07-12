@@ -1,3 +1,5 @@
+// Detalle público de un sitio: gauge, stats del día e historial
+
 import { useEffect, useState } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import Header from '../components/Header';
@@ -16,6 +18,7 @@ export default function SitioDetalle() {
   const [historial, setHistorial] = useState({ labels: [], data: [], limite: 0 });
   const [periodo, setPeriodo] = useState('dia');
 
+  // Cargar sitio, estadísticas e historial (se repite al cambiar periodo o aforo)
   async function cargarDatos() {
     const [rSitio, rStats, rHist] = await Promise.all([
       fetch(`/api/sitios/${sitioId}`),
@@ -32,6 +35,7 @@ export default function SitioDetalle() {
     cargarDatos();
   }, [sitioId, periodo]);
 
+  // Actualizar en tiempo real cuando MQTT cambia el aforo
   useEffect(() => {
     socket.emit('join_sitio', { sitio_id: sitioId });
     const onAforo = (data) => {

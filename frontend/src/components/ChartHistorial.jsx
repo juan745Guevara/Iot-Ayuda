@@ -1,3 +1,5 @@
+// Gráfico de línea (Chart.js) con historial de aforo y línea de límite
+
 import { Line } from 'react-chartjs-2';
 import {
   Chart as ChartJS,
@@ -27,7 +29,7 @@ export default function ChartHistorial({ labels, data, limite }) {
         fill: true,
         tension: 0.3,
         pointRadius: labels.length > 14 ? 2 : 4,
-        spanGaps: true,
+        spanGaps: true, // Conectar puntos aunque falten horas sin datos
       },
       {
         label: 'Límite',

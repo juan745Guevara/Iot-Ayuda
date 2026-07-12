@@ -1,7 +1,10 @@
+// Tarjetas del panel de seguridad: vista compacta y vista único sitio
+
 import CamaraStream from './CamaraStream';
 import BarraAforo from './BarraAforo';
 import { calcularOcupacion, claseOcupacion, etiquetaOcupacion } from '../utils/aforo';
 
+// Layout amplio cuando el guardia tiene un solo sitio asignado
 export function SeguridadSitioFull({ sitio, onAlarma, alarmaEnviada }) {
   const pct = calcularOcupacion(sitio.aforo_actual, sitio.aforo_maximo);
   const clase = claseOcupacion(pct);
@@ -30,6 +33,7 @@ export function SeguridadSitioFull({ sitio, onAlarma, alarmaEnviada }) {
   );
 }
 
+// Tarjeta en grid cuando hay varios sitios (admin)
 export default function SeguridadSitioCard({ sitio, onAlarma, alarmaEnviada }) {
   return (
     <div className="card sitio-seguridad sitio-seguridad-card">

@@ -1,3 +1,5 @@
+// Resumen de sitios por estado de ocupación (hero de Home)
+
 import { calcularOcupacion, claseOcupacion } from '../utils/aforo';
 
 const STATS = [

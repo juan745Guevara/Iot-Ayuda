@@ -1,3 +1,5 @@
+// Panel admin: crear sitios y asignar guardias (rol admin)
+
 import { useEffect, useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import Header from '../components/Header';

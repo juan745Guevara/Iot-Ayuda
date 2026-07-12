@@ -1,10 +1,12 @@
+// Gauge circular SVG: aforo actual vs máximo
+
 import { calcularOcupacion, claseOcupacion, colorGauge } from '../utils/aforo';
 
-const CIRC = 2 * Math.PI * 88;
+const CIRC = 2 * Math.PI * 88; // Perímetro del arco (radio 88)
 
 export default function GaugeAforo({ actual, maximo }) {
   const pct = calcularOcupacion(actual, maximo);
-  const offset = CIRC - (pct / 100) * CIRC;
+  const offset = CIRC - (pct / 100) * CIRC; // stroke-dashoffset según ocupación
 
   return (
     <div className="gauge-wrap">

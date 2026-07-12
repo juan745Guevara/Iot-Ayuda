@@ -1,4 +1,4 @@
-// Sitios turísticos de demostración (Tingo María y alrededores)
+// Catálogo de 12 sitios turísticos demo (Tingo María) con IDs de dispositivos IoT
 
 const SITIOS_DEMO = [
   {
@@ -99,6 +99,7 @@ const SITIOS_DEMO = [
   },
 ];
 
+// Inserta solo sitios que no existan (por nombre o esp8266_client_id)
 async function insertarSitiosFaltantes(db) {
   let insertados = 0;
 

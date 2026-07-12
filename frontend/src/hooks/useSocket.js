@@ -1,8 +1,11 @@
+// Cliente Socket.IO compartido entre páginas (una sola conexión)
+
 import { useEffect, useRef } from 'react';
 import { io } from 'socket.io-client';
 
 let socketInstance = null;
 
+// Singleton: reutilizar la misma conexión al cambiar de ruta
 function getSocket() {
   if (!socketInstance) {
     socketInstance = io({ path: '/socket.io' });
@@ -16,7 +19,7 @@ export function useSocket() {
   useEffect(() => {
     const socket = socketRef.current;
     return () => {
-      // Mantener conexión global entre páginas
+      // No desconectar al desmontar: la conexión es global
     };
   }, []);
 

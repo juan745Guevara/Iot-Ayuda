@@ -1,3 +1,5 @@
+// Muestra frames JPEG en base64 recibidos por Socket.IO (room camara_{id})
+
 import { useEffect, useState } from 'react';
 import { useSocket } from '../hooks/useSocket';
 import { getToken } from '../utils/auth';

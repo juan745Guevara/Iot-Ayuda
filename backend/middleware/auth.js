@@ -1,6 +1,9 @@
+// Middleware JWT: protege rutas y valida roles (seguridad, admin)
+
 const jwt = require('jsonwebtoken');
 const config = require('../config');
 
+// Exige header Authorization: Bearer <token>
 function authRequired(req, res, next) {
   const header = req.headers.authorization;
   if (!header || !header.startsWith('Bearer ')) {
@@ -8,6 +11,7 @@ function authRequired(req, res, next) {
   }
 
   try {
+    // Decodifica el token y guarda el usuario en req.user
     req.user = jwt.verify(header.slice(7), config.jwtSecret);
     next();
   } catch {
@@ -15,6 +19,7 @@ function authRequired(req, res, next) {
   }
 }
 
+// Factory: solo permite los roles indicados (ej. 'admin', 'seguridad')
 function requireRol(...roles) {
   return (req, res, next) => {
     if (!req.user || !roles.includes(req.user.rol)) {

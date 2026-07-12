@@ -1,7 +1,6 @@
-/**
- * Añade tablas de estadísticas e historial inicial en BD existentes.
- * Uso: node db/migrate-stats.js
- */
+// Migración: tablas de historial/stats + datos iniciales en BD antiguas
+// Uso: node db/migrate-stats.js  o  npm run db:migrate-stats
+
 const fs = require('fs');
 const path = require('path');
 const db = require('./index');
@@ -18,6 +17,7 @@ async function migrate() {
       [s.id]
     );
 
+    // Sembrar historial y stats del día con el aforo actual
     if (tieneHistorial.rows.length === 0 && s.aforo_actual >= 0) {
       await db.query(
         'INSERT INTO historial_aforo (sitio_id, aforo_actual) VALUES ($1, $2)',

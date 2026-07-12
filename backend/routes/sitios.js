@@ -1,10 +1,12 @@
+// API REST de sitios: listado público, estadísticas, historial y cámara
+
 const express = require('express');
 const db = require('../db');
 const { authRequired, requireRol } = require('../middleware/auth');
 
 const router = express.Router();
 
-// Lista pública de sitios activos
+// GET /api/sitios — lista pública de sitios activos
 router.get('/', async (req, res) => {
   try {
     const result = await db.query(
@@ -18,7 +20,7 @@ router.get('/', async (req, res) => {
   }
 });
 
-// Detalle público de un sitio
+// GET /api/sitios/:id — detalle de un sitio
 router.get('/:id', async (req, res) => {
   try {
     const result = await db.query(
@@ -38,7 +40,7 @@ router.get('/:id', async (req, res) => {
   }
 });
 
-// Aforo actual de un sitio (público)
+// GET /api/sitios/:id/aforo — aforo actual simplificado
 router.get('/:id/aforo', async (req, res) => {
   try {
     const result = await db.query(
@@ -64,7 +66,7 @@ router.get('/:id/aforo', async (req, res) => {
   }
 });
 
-// Estadísticas reales del día (público)
+// GET /api/sitios/:id/estadisticas — métricas del día (visitas, pico, alertas)
 router.get('/:id/estadisticas', async (req, res) => {
   const sitioId = parseInt(req.params.id, 10);
 
@@ -89,6 +91,7 @@ router.get('/:id/estadisticas', async (req, res) => {
       [sitioId]
     );
 
+    // Hora del pico de aforo de hoy
     const pico = await db.query(
       `SELECT aforo_actual, recorded_at FROM historial_aforo
        WHERE sitio_id = $1 AND recorded_at >= CURRENT_DATE
@@ -131,7 +134,7 @@ router.get('/:id/estadisticas', async (req, res) => {
   }
 });
 
-// Historial de aforo para gráficos (público)
+// GET /api/sitios/:id/historial?periodo=dia|semana|mes — datos para gráficos
 router.get('/:id/historial', async (req, res) => {
   const sitioId = parseInt(req.params.id, 10);
   const periodo = req.query.periodo || 'dia';
@@ -148,6 +151,7 @@ router.get('/:id/historial', async (req, res) => {
     let result;
 
     if (periodo === 'dia') {
+      // Agrupar por hora (6:00–22:00) el máximo aforo de cada hora
       result = await db.query(
         `SELECT EXTRACT(HOUR FROM recorded_at)::int AS hora,
                 MAX(aforo_actual) AS valor
@@ -182,6 +186,7 @@ router.get('/:id/historial', async (req, res) => {
         [sitioId]
       );
     } else {
+      // mes: últimos 30 días
       result = await db.query(
         `SELECT TO_CHAR(recorded_at, 'DD Mon') AS dia,
                 DATE(recorded_at) AS fecha,
@@ -208,7 +213,7 @@ router.get('/:id/historial', async (req, res) => {
   }
 });
 
-// Info de cámara (solo seguridad/admin con acceso al sitio)
+// GET /api/sitios/:id/camara — metadatos del stream (solo seguridad/admin)
 router.get('/:id/camara', authRequired, requireRol('seguridad', 'admin'), async (req, res) => {
   try {
     const sitioId = parseInt(req.params.id, 10);
@@ -240,6 +245,7 @@ router.get('/:id/camara', authRequired, requireRol('seguridad', 'admin'), async 
   }
 });
 
+// Admin tiene acceso a todo; seguridad solo a sitios asignados en seguridad_sitios
 async function verificarAccesoSitio(user, sitioId) {
   if (user.rol === 'admin') return true;
 

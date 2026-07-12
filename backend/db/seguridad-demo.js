@@ -1,4 +1,4 @@
-// Un guardia de seguridad por sitio turístico (modelo 1:1)
+// Cuentas guardia demo: un email por sitio (contraseña compartida seg123)
 
 const PASSWORD_DEMO = 'seg123';
 
@@ -17,6 +17,7 @@ const SEGURIDAD_DEMO = [
   { nombre: 'Seg. Parque Nacional', email: 'seg.parque@iot.local', sitio_id: 12 },
 ];
 
+// Crea o actualiza guardias y los asigna 1:1 a cada sitio
 async function insertarSeguridadPorSitio(db, bcrypt) {
   const passwordHash = await bcrypt.hash(PASSWORD_DEMO, 10);
   let creados = 0;

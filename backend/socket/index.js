@@ -1,3 +1,5 @@
+// Socket.IO: rooms de aforo (público), cámara y alarmas (con JWT)
+
 const jwt = require('jsonwebtoken');
 const config = require('../config');
 const { verificarAccesoSitio } = require('../routes/sitios');
@@ -7,7 +9,7 @@ function initSocket(io) {
   io.on('connection', (socket) => {
     console.log(`Cliente conectado: ${socket.id}`);
 
-    // Unirse a room de aforo de un sitio (público)
+    // Unirse al room de un sitio para recibir actualizaciones de aforo
     socket.on('join_sitio', (data) => {
       const sitioId = parseInt(data?.sitio_id, 10);
       if (!isNaN(sitioId)) {
@@ -15,7 +17,7 @@ function initSocket(io) {
       }
     });
 
-    // Unirse a todos los sitios activos (página pública)
+    // Home: unirse a todos los sitios activos de una vez
     socket.on('join_todos_sitios', async () => {
       try {
         const db = require('../db');
@@ -26,7 +28,7 @@ function initSocket(io) {
       }
     });
 
-    // Unirse a stream de cámara (requiere JWT + rol + asignación)
+    // Stream de cámara: validar JWT, rol y asignación al sitio
     socket.on('join_camara', async (data) => {
       const sitioId = parseInt(data?.sitio_id, 10);
       const token = data?.token;
@@ -57,7 +59,7 @@ function initSocket(io) {
       }
     });
 
-    // Enviar alarma desde dashboard de seguridad (requiere JWT + rol + asignación)
+    // Alarma remota desde panel de seguridad → MQTT → buzzer ESP8266
     socket.on('alarma', async (data) => {
       const sitioId = parseInt(data?.sitio_id, 10);
       const token = data?.token;

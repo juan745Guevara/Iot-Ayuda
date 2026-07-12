@@ -1,3 +1,5 @@
+// Búsqueda por texto y filtro por estado (verde/amarillo/rojo)
+
 import { useState } from 'react';
 
 const FILTROS = [
@@ -57,6 +59,7 @@ export default function BuscadorSitios({ onChange, placeholder = 'Buscar por nom
   );
 }
 
+// Filtra lista de sitios según query y estado (_estado precalculado)
 export function filtrarSitiosLista(sitios, { query, filtro }) {
   const q = query.trim().toLowerCase();
   return sitios.filter((s) => {

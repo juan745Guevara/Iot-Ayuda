@@ -1,3 +1,5 @@
+// Sesión JWT en localStorage (token + datos del usuario)
+
 export function getToken() {
   return localStorage.getItem('token');
 }
@@ -17,6 +19,7 @@ export function cerrarSesion() {
   localStorage.removeItem('usuario');
 }
 
+// Headers para fetch autenticado a la API
 export function authHeaders() {
   return {
     'Content-Type': 'application/json',

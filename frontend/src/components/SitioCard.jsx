@@ -1,3 +1,5 @@
+// Tarjeta de sitio en el listado público (enlace al detalle)
+
 import { Link } from 'react-router-dom';
 import { calcularOcupacion, claseOcupacion, etiquetaOcupacion } from '../utils/aforo';
 import BarraAforo from './BarraAforo';

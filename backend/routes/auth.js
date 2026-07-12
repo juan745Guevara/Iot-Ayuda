@@ -1,3 +1,5 @@
+// Login: valida credenciales y devuelve JWT + datos del usuario
+
 const express = require('express');
 const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
@@ -6,6 +8,7 @@ const config = require('../config');
 
 const router = express.Router();
 
+// POST /api/auth/login — email + contraseña → token JWT (8 h)
 router.post('/login', async (req, res) => {
   const { email, password } = req.body;
 
@@ -30,6 +33,7 @@ router.post('/login', async (req, res) => {
       return res.status(401).json({ error: 'Credenciales inválidas' });
     }
 
+    // Token con id, rol y nombre para el frontend y Socket.IO
     const token = jwt.sign(
       { id: usuario.id, rol: usuario.rol, nombre: usuario.nombre },
       config.jwtSecret,

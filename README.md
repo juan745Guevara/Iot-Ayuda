@@ -2,6 +2,8 @@
 
 Sistema de monitoreo de aforo para **varios establecimientos turísticos**. Cada sitio tiene un **ESP8266** (conteo con sensores FC-51) y un **ESP32-CAM** (video en vivo). El **backend** en Node.js conecta **MQTT**, **PostgreSQL** y **Socket.IO**; el **frontend** en React (Vite) ofrece panel público, detalle por sitio y dashboards de seguridad/admin.
 
+> **¿Primera vez o quieres arrancar el proyecto?** Lee la **[Guía de arranque (GUIA_INICIO.md)](GUIA_INICIO.md)** — instalación, `.env`, base de datos, `npm start` y solución de problemas paso a paso.
+
 ---
 
 ## Características
@@ -23,13 +25,9 @@ Iot-Ayuda/
 ├── package.json             # Scripts raíz (start, build, db:*)
 ├── .env.example             # Plantilla de configuración (copiar a .env en la raíz)
 ├── Firmware/
-│   ├── README.md            # Guía completa de flasheo
-│   ├── esp8266/
-│   │   ├── esp8266.ino
-│   │   └── config.h         # WiFi, IP del PC, SITIO_ID (editar antes de subir)
-│   └── esp32cam/
-│       ├── esp32cam.ino
-│       └── config.h
+│   ├── esp8266.ino          # Aforo + MQTT (editar CONFIGURACIÓN al inicio)
+│   ├── esp32cam.ino         # Cámara HTTP POST (editar CONFIGURACIÓN al inicio)
+│   └── FLASHEO.md           # Guía para subir código a los ESP
 ├── backend/                 # API Node.js + MQTT + Socket.IO
 │   ├── index.js             # Punto de entrada del servidor
 │   ├── config.js            # Variables de entorno (lee .env de la raíz)
@@ -166,7 +164,7 @@ El servidor se suscribe a `aforo/+/aforo` y actualiza la BD + Socket.IO room `si
 | `aforo` | Servidor → cliente | `{ sitio_id, aforo_actual }` |
 | `join_camara` | Cliente → servidor | `{ sitio_id, token }` — valida JWT y asignación |
 | `frame` | Servidor → cliente | `{ sitio_id, frame (base64), timestamp }` |
-| `alarma` | Cliente → servidor | `{ sitio_id, mensaje }` — publica MQTT alarma |
+| `alarma` | Cliente → servidor | `{ sitio_id, mensaje, token }` — valida JWT y publica MQTT alarma |
 
 Rooms:
 - `sitio_{id}` — actualizaciones de aforo (público)
@@ -267,13 +265,13 @@ Abrir `http://localhost:5173` (Vite proxy hacia la API en `:3000`).
 
 ### 6. Flashear firmware
 
-Guía paso a paso: **[Firmware/README.md](Firmware/README.md)**
+Guía paso a paso: **[Firmware/FLASHEO.md](Firmware/FLASHEO.md)**
 
 Resumen:
 
 1. Obtén la IP de tu PC (`ipconfig`) — los ESP usan esa IP, no `localhost`.
-2. Edita `Firmware/esp8266/config.h` y `Firmware/esp32cam/config.h` (WiFi + IP + sitio).
-3. Abre cada carpeta en Arduino IDE y sube al dispositivo.
+2. Edita la sección **CONFIGURACIÓN** al inicio de `Firmware/esp8266.ino` y `Firmware/esp32cam.ino`.
+3. Sube cada archivo con Arduino IDE.
 
 Por defecto ambos apuntan al **sitio 1** (`esp8266-sitio-1` / `esp32cam-sitio-1`).
 

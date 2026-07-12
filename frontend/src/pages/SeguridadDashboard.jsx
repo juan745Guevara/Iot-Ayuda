@@ -1,3 +1,5 @@
+// Panel de seguridad: cámara en vivo, aforo y botón de alarma MQTT
+
 import { useEffect, useState, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import Header from '../components/Header';
@@ -15,6 +17,7 @@ export default function SeguridadDashboard() {
   const [busqueda, setBusqueda] = useState({ query: '', filtro: 'todos' });
   const [alarmaMsg, setAlarmaMsg] = useState(null);
 
+  // Proteger ruta: solo seguridad o admin con token válido
   useEffect(() => {
     const token = getToken();
     if (!token || !usuario || (usuario.rol !== 'seguridad' && usuario.rol !== 'admin')) {
@@ -33,6 +36,7 @@ export default function SeguridadDashboard() {
       }))));
   }, [navigate, usuario]);
 
+  // Unirse a rooms de aforo y cámara; escuchar actualizaciones
   useEffect(() => {
     sitios.forEach((s) => {
       socket.emit('join_sitio', { sitio_id: s.id });
@@ -54,6 +58,7 @@ export default function SeguridadDashboard() {
   const filtrados = useMemo(() => filtrarSitiosLista(sitios, busqueda), [sitios, busqueda]);
   const sitioUnico = sitios.length === 1;
 
+  // Enviar alarma al ESP8266 vía Socket.IO → MQTT
   function enviarAlarma(sitioId) {
     socket.emit('alarma', { sitio_id: sitioId, mensaje: '1', token: getToken() });
     setAlarmaMsg(sitioId);

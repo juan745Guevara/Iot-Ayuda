@@ -1,7 +1,6 @@
-/**
- * Migra a modelo 1 guardia = 1 sitio turístico.
- * Uso: node db/migrar-seguridad.js
- */
+// Recrea cuentas guardia 1:1 con sitios (sin borrar sitios)
+// Uso: node db/migrar-seguridad.js  o  npm run db:migrar-seguridad
+
 const bcrypt = require('bcryptjs');
 const db = require('./index');
 const { insertarSeguridadPorSitio, PASSWORD_DEMO } = require('./seguridad-demo');

@@ -1,7 +1,6 @@
-/**
- * Inicializa la base de datos: crea tablas e inserta datos de ejemplo.
- * Uso: node db/seed.js
- */
+// Inicializa la BD: schema + sitios demo + admin + guardias
+// Uso: node db/seed.js  o  npm run db:seed
+
 const fs = require('fs');
 const path = require('path');
 const bcrypt = require('bcryptjs');
@@ -10,6 +9,7 @@ const { insertarSitiosFaltantes } = require('./sitios-demo');
 const { insertarSeguridadPorSitio, PASSWORD_DEMO } = require('./seguridad-demo');
 
 async function seed() {
+  // Ejecutar schema.sql (tablas, índices, etc.)
   const schema = fs.readFileSync(path.join(__dirname, 'schema.sql'), 'utf8');
   await db.query(schema);
 
@@ -21,6 +21,7 @@ async function seed() {
     console.log('Todos los sitios ya existían.');
   }
 
+  // Crear admin solo si no existe
   const usuarios = await db.query('SELECT COUNT(*) FROM usuarios WHERE rol = $1', ['admin']);
   if (parseInt(usuarios.rows[0].count, 10) === 0) {
     const adminHash = await bcrypt.hash('admin123', 10);

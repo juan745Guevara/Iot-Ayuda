@@ -1,10 +1,12 @@
+// Recibe frames JPEG del ESP32-CAM y los reenvía por Socket.IO
+
 const express = require('express');
 const db = require('../db');
 
 function crearRouterCamara(io) {
   const router = express.Router();
 
-  // Recibe frames JPEG del ESP32-CAM
+  // POST /api/camara/:sitio_id/frame — body binario JPEG + header X-Client-Id
   router.post(
     '/:sitio_id/frame',
     express.raw({ type: ['image/jpeg', 'application/octet-stream'], limit: '512kb' }),
@@ -28,6 +30,7 @@ function crearRouterCamara(io) {
 
         const sitio = result.rows[0];
 
+        // Validar que el ESP32-CAM pertenece a este sitio
         if (sitio.esp32cam_client_id !== clientId) {
           return res.status(403).json({ error: 'Client ID no autorizado' });
         }
@@ -38,6 +41,7 @@ function crearRouterCamara(io) {
 
         const base64Frame = req.body.toString('base64');
 
+        // Emitir al room de cámara del sitio (navegadores con join_camara)
         io.to(`camara_${sitioId}`).emit('frame', {
           sitio_id: sitioId,
           frame: base64Frame,

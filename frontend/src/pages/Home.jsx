@@ -1,3 +1,5 @@
+// Página pública: listado de sitios con aforo en tiempo real
+
 import { useEffect, useState, useMemo } from 'react';
 import { Link } from 'react-router-dom';
 import Header from '../components/Header';
@@ -12,6 +14,7 @@ export default function Home() {
   const [sitios, setSitios] = useState([]);
   const [busqueda, setBusqueda] = useState({ query: '', filtro: 'todos' });
 
+  // Carga inicial desde REST
   useEffect(() => {
     fetch('/api/sitios')
       .then((r) => r.json())
@@ -23,6 +26,7 @@ export default function Home() {
       });
   }, []);
 
+  // Socket.IO: unirse a todos los sitios y escuchar cambios de aforo
   useEffect(() => {
     socket.emit('join_todos_sitios');
     const onAforo = (data) => {

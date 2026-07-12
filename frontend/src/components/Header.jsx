@@ -1,3 +1,5 @@
+// Cabecera común: logo, título y slot para botones del nav
+
 import { Link } from 'react-router-dom';
 
 function LogoMark() {

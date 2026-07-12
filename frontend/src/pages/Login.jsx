@@ -1,3 +1,5 @@
+// Login JWT: redirige a /admin o /seguridad según el rol
+
 import { useState, useEffect } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import Header from '../components/Header';
@@ -9,6 +11,7 @@ export default function Login() {
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
 
+  // Si ya hay sesión, ir al panel correspondiente
   useEffect(() => {
     const u = getUsuario();
     if (u?.rol === 'admin') navigate('/admin');

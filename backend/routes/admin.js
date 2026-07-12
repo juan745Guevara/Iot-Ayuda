@@ -1,12 +1,15 @@
+// Panel admin: CRUD sitios, asignar guardias y publicar alarmas MQTT
+
 const express = require('express');
 const db = require('../db');
 const { authRequired, requireRol } = require('../middleware/auth');
 
 const router = express.Router();
 
+// Todas las rutas requieren rol admin
 router.use(authRequired, requireRol('admin'));
 
-// Listar todos los sitios (incluye inactivos)
+// GET /api/admin/sitios — todos los sitios (incluye inactivos)
 router.get('/sitios', async (req, res) => {
   try {
     const result = await db.query(
@@ -21,7 +24,7 @@ router.get('/sitios', async (req, res) => {
   }
 });
 
-// Crear sitio
+// POST /api/admin/sitios — crear nuevo sitio turístico
 router.post('/sitios', async (req, res) => {
   const {
     nombre,
@@ -59,7 +62,7 @@ router.post('/sitios', async (req, res) => {
   }
 });
 
-// Asignar usuario de seguridad a un sitio
+// POST /api/admin/asignar-seguridad — modelo 1 guardia : 1 sitio
 router.post('/asignar-seguridad', async (req, res) => {
   const { usuario_id, sitio_id } = req.body;
 
@@ -82,7 +85,7 @@ router.post('/asignar-seguridad', async (req, res) => {
       return res.status(404).json({ error: 'Sitio no encontrado' });
     }
 
-    // Modelo 1:1 — un guardia solo en un sitio, un sitio solo un guardia
+    // Quitar asignaciones previas del guardia y del sitio (relación 1:1)
     await db.query('DELETE FROM seguridad_sitios WHERE usuario_id = $1', [usuario_id]);
     await db.query('DELETE FROM seguridad_sitios WHERE sitio_id = $1', [sitio_id]);
 
@@ -99,7 +102,7 @@ router.post('/asignar-seguridad', async (req, res) => {
   }
 });
 
-// Listar usuarios de seguridad (para el panel admin)
+// GET /api/admin/usuarios-seguridad — listado con sitio asignado
 router.get('/usuarios-seguridad', async (req, res) => {
   try {
     const result = await db.query(
@@ -122,7 +125,7 @@ router.get('/usuarios-seguridad', async (req, res) => {
   }
 });
 
-// Publicar alarma MQTT para un sitio (admin)
+// POST /api/admin/alarma/:sitio_id — disparar alarma MQTT (pruebas desde admin)
 router.post('/alarma/:sitio_id', async (req, res) => {
   const sitioId = parseInt(req.params.sitio_id, 10);
   const { getMqttClient } = require('../mqtt/client');

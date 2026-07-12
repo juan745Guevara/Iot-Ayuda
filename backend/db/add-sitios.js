@@ -1,7 +1,6 @@
-/**
- * Añade sitios turísticos que falten en la BD (sin borrar los existentes).
- * Uso: node db/add-sitios.js
- */
+// Añade sitios del catálogo demo que aún no existen en la BD
+// Uso: node db/add-sitios.js  o  npm run db:add-sitios
+
 const db = require('./index');
 const { insertarSitiosFaltantes } = require('./sitios-demo');
 

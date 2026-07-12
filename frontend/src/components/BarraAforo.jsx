@@ -1,3 +1,5 @@
+// Barra de progreso con números actual/máximo y badge de estado
+
 import { calcularOcupacion, claseOcupacion, etiquetaOcupacion } from '../utils/aforo';
 
 export default function BarraAforo({ actual, maximo }) {

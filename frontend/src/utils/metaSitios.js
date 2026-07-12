@@ -1,3 +1,5 @@
+// Metadatos de presentación por sitio (tipo y distancia; no vienen de la BD)
+
 export const META_SITIOS = {
   1: { tipo: 'Catarata · Tingo María', detalle: ['Distrito Río Tambo', '12 km del centro'] },
   2: { tipo: 'Cueva · Tingo María', detalle: ['Carretera Central', '5 km del centro'] },

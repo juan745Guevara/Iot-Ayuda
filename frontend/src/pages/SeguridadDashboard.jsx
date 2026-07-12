@@ -64,14 +64,17 @@ export default function SeguridadDashboard() {
 
   return (
     <>
-      <Header icon="🛡️" title="Panel de Seguridad">
-        <span className="nav-user">{usuario.nombre}</span>
+      <Header title="Panel de Seguridad" subtitle={usuario.nombre}>
+        <span className="live-badge live-badge-header">
+          <span className="live-dot" />
+          Monitoreo activo
+        </span>
         <button type="button" className="btn-nav btn-nav-ghost" onClick={() => { cerrarSesion(); navigate('/login'); }}>
           Cerrar sesión
         </button>
       </Header>
 
-      <main className={`main-seguridad ${sitioUnico ? 'main-un-sitio' : ''}`}>
+      <main className={`page-main main-seguridad ${sitioUnico ? 'main-un-sitio' : ''}`}>
         {!sitioUnico && (
           <>
             <BuscadorSitios placeholder="Buscar sitio asignado..." onChange={setBusqueda} />

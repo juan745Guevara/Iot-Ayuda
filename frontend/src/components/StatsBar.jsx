@@ -1,35 +1,28 @@
 import { calcularOcupacion, claseOcupacion } from '../utils/aforo';
 
+const STATS = [
+  { key: 'total', label: 'Sitios activos', color: 'stat-total' },
+  { key: 'verde', label: 'Disponibles', color: 'stat-ok' },
+  { key: 'amarillo', label: 'Moderados', color: 'stat-warn' },
+  { key: 'rojo', label: 'Llenos', color: 'stat-danger' },
+];
+
 export default function StatsBar({ sitios }) {
-  let disponibles = 0;
-  let moderados = 0;
-  let llenos = 0;
+  const counts = { total: sitios.length, verde: 0, amarillo: 0, rojo: 0 };
 
   sitios.forEach((s) => {
     const c = claseOcupacion(calcularOcupacion(s.aforo_actual, s.aforo_maximo));
-    if (c === 'verde') disponibles++;
-    else if (c === 'amarillo') moderados++;
-    else llenos++;
+    counts[c]++;
   });
 
   return (
-    <div className="stats-bar">
-      <div className="stat-item">
-        <div className="stat-valor">{sitios.length}</div>
-        <div className="stat-label">Sitios</div>
-      </div>
-      <div className="stat-item">
-        <div className="stat-valor" style={{ color: '#27ae60' }}>{disponibles}</div>
-        <div className="stat-label">Disponibles</div>
-      </div>
-      <div className="stat-item">
-        <div className="stat-valor" style={{ color: '#e9a319' }}>{moderados}</div>
-        <div className="stat-label">Moderados</div>
-      </div>
-      <div className="stat-item">
-        <div className="stat-valor" style={{ color: '#d64545' }}>{llenos}</div>
-        <div className="stat-label">Llenos</div>
-      </div>
+    <div className="stats-bar stats-bar-pro">
+      {STATS.map(({ key, label, color }) => (
+        <div key={key} className={`stat-card ${color}`}>
+          <div className="stat-card-valor">{counts[key]}</div>
+          <div className="stat-card-label">{label}</div>
+        </div>
+      ))}
     </div>
   );
 }

@@ -15,12 +15,6 @@ export default function SitioDetalle() {
   const [stats, setStats] = useState(null);
   const [historial, setHistorial] = useState({ labels: [], data: [], limite: 0 });
   const [periodo, setPeriodo] = useState('dia');
-  const [reloj, setReloj] = useState(new Date().toLocaleTimeString('es-PE'));
-
-  useEffect(() => {
-    const t = setInterval(() => setReloj(new Date().toLocaleTimeString('es-PE')), 1000);
-    return () => clearInterval(t);
-  }, []);
 
   async function cargarDatos() {
     const [rSitio, rStats, rHist] = await Promise.all([
@@ -58,20 +52,35 @@ export default function SitioDetalle() {
 
   return (
     <>
-      <Header>
-        <span className="reloj-sitio">{reloj}</span>
-        <button type="button" className="btn-header" onClick={cargarDatos}>↻ Actualizar</button>
-        <Link to="/login" className="btn-nav">Acceso Seguridad</Link>
+      <Header subtitle="Detalle del sitio">
+        <span className="live-badge">
+          <span className="live-dot" />
+          En vivo
+        </span>
+        <Link to="/login" className="btn-nav">Acceso personal</Link>
       </Header>
 
       <section className="hero hero-sitio">
-        <div className="hero-content hero-sitio-content">
+        <div className="hero-bg-shape hero-bg-shape-1" />
+        <div className="hero-inner hero-sitio-content">
           <Link to="/" className="volver-link">← Volver a sitios</Link>
-          <div className="sitio-tipo-label">{meta.tipo}</div>
+          <span className="eyebrow eyebrow-light">{meta.tipo}</span>
           <h1>{sitio.nombre}</h1>
           <div className="sitio-detalle-lineas">
-            {(meta.detalle.length ? meta.detalle : [sitio.ubicacion]).map((d) => (
-              <span key={d}>📍 {d}</span>
+            {(meta.detalle.length ? meta.detalle : [sitio.ubicacion]).map((d, i) => (
+              <span key={d} className="sitio-meta-chip">
+                {i === 0 ? (
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" aria-hidden>
+                    <path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7z" stroke="currentColor" strokeWidth="2" />
+                    <circle cx="12" cy="9" r="2.5" stroke="currentColor" strokeWidth="2" />
+                  </svg>
+                ) : (
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" aria-hidden>
+                    <path d="M3 12h18M13 6l6 6-6 6" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+                  </svg>
+                )}
+                {d}
+              </span>
             ))}
           </div>
           <div className="estado-hero">
@@ -80,7 +89,7 @@ export default function SitioDetalle() {
         </div>
       </section>
 
-      <main className="with-hero sitio-main">
+      <main className="with-hero page-main sitio-main">
         <div className="sitio-dashboard-grid">
           <div className="card sitio-panel">
             <h3 className="sitio-panel-title">Aforo en tiempo real</h3>

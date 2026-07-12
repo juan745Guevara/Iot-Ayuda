@@ -71,84 +71,113 @@ export default function Admin() {
 
   return (
     <>
-      <Header icon="⚙️" title="Administración">
-        <Link to="/seguridad">Dashboard</Link>
+      <Header title="Administración" subtitle="Gestión del sistema">
+        <Link to="/seguridad" className="btn-nav btn-nav-outline">Dashboard</Link>
         <button type="button" className="btn-nav btn-nav-ghost" onClick={() => { cerrarSesion(); navigate('/login'); }}>
           Cerrar sesión
         </button>
       </Header>
 
-      <main className="admin-grid">
-        <div className="card" style={{ padding: 24 }}>
-          <h2 className="section-title">Crear sitio turístico</h2>
-          <form onSubmit={crearSitio}>
-            <label>Nombre</label>
-            <input required value={formSitio.nombre} onChange={(e) => setFormSitio({ ...formSitio, nombre: e.target.value })} />
-            <label>Ubicación</label>
-            <input value={formSitio.ubicacion} onChange={(e) => setFormSitio({ ...formSitio, ubicacion: e.target.value })} />
-            <label>Aforo máximo</label>
-            <input type="number" value={formSitio.aforo_maximo} onChange={(e) => setFormSitio({ ...formSitio, aforo_maximo: e.target.value })} />
-            <label>ESP8266 Client ID</label>
-            <input value={formSitio.esp8266_client_id} onChange={(e) => setFormSitio({ ...formSitio, esp8266_client_id: e.target.value })} />
-            <label>ESP32-CAM Client ID</label>
-            <input value={formSitio.esp32cam_client_id} onChange={(e) => setFormSitio({ ...formSitio, esp32cam_client_id: e.target.value })} />
-            <button type="submit">Crear sitio</button>
-            {msgSitio && <div className={msgSitio.startsWith('Sitio') ? 'success-msg' : 'error-msg'}>{msgSitio}</div>}
-          </form>
+      <main className="page-main admin-page">
+        <div className="page-intro">
+          <h1 className="page-title">Panel de administración</h1>
+          <p className="page-subtitle">Configura sitios turísticos, dispositivos IoT y asignaciones de personal.</p>
         </div>
 
-        <div className="card" style={{ padding: 24 }}>
-          <h2 className="section-title">Asignar guardia a sitio (1:1)</h2>
-          <p style={{ color: 'var(--texto-suave)', fontSize: '0.9rem', margin: '-8px 0 16px' }}>
-            Cada guardia queda en un solo sitio.
-          </p>
-          <form onSubmit={asignarSeguridad}>
-            <label>Usuario de seguridad (ID)</label>
-            <input type="number" required value={asignar.usuario_id} onChange={(e) => setAsignar({ ...asignar, usuario_id: e.target.value })} />
-            <label>Sitio (ID)</label>
-            <input type="number" required value={asignar.sitio_id} onChange={(e) => setAsignar({ ...asignar, sitio_id: e.target.value })} />
-            <button type="submit">Asignar</button>
-            {msgAsignar && <div className={msgAsignar.includes('realizada') ? 'success-msg' : 'error-msg'}>{msgAsignar}</div>}
-          </form>
-        </div>
+        <div className="admin-grid">
+          <div className="card admin-panel">
+            <h2 className="section-title">Crear sitio turístico</h2>
+            <form onSubmit={crearSitio} className="admin-form">
+              <div className="form-row">
+                <div className="form-field">
+                  <label>Nombre</label>
+                  <input required value={formSitio.nombre} onChange={(e) => setFormSitio({ ...formSitio, nombre: e.target.value })} />
+                </div>
+                <div className="form-field">
+                  <label>Ubicación</label>
+                  <input value={formSitio.ubicacion} onChange={(e) => setFormSitio({ ...formSitio, ubicacion: e.target.value })} />
+                </div>
+              </div>
+              <div className="form-row">
+                <div className="form-field">
+                  <label>Aforo máximo</label>
+                  <input type="number" value={formSitio.aforo_maximo} onChange={(e) => setFormSitio({ ...formSitio, aforo_maximo: e.target.value })} />
+                </div>
+                <div className="form-field">
+                  <label>ESP8266 Client ID</label>
+                  <input value={formSitio.esp8266_client_id} onChange={(e) => setFormSitio({ ...formSitio, esp8266_client_id: e.target.value })} placeholder="esp8266-sitio-1" />
+                </div>
+              </div>
+              <div className="form-field">
+                <label>ESP32-CAM Client ID</label>
+                <input value={formSitio.esp32cam_client_id} onChange={(e) => setFormSitio({ ...formSitio, esp32cam_client_id: e.target.value })} placeholder="esp32cam-sitio-1" />
+              </div>
+              <button type="submit" className="btn-primary">Crear sitio</button>
+              {msgSitio && <div className={msgSitio.startsWith('Sitio') ? 'success-msg' : 'error-msg'}>{msgSitio}</div>}
+            </form>
+          </div>
 
-        <div className="card" style={{ padding: 24 }}>
-          <h2 className="section-title">Sitios registrados</h2>
-          <table>
-            <thead>
-              <tr><th>ID</th><th>Nombre</th><th>Aforo</th><th>ESP8266</th><th>ESP32-CAM</th></tr>
-            </thead>
-            <tbody>
-              {sitios.map((s) => (
-                <tr key={s.id}>
-                  <td>{s.id}</td>
-                  <td>{s.nombre}</td>
-                  <td>{s.aforo_actual}/{s.aforo_maximo}</td>
-                  <td>{s.esp8266_client_id || '-'}</td>
-                  <td>{s.esp32cam_client_id || '-'}</td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
+          <div className="card admin-panel">
+            <h2 className="section-title">Asignar guardia (1:1)</h2>
+            <p className="panel-hint">Cada guardia queda asignado a un único sitio.</p>
+            <form onSubmit={asignarSeguridad} className="admin-form">
+              <div className="form-row">
+                <div className="form-field">
+                  <label>Usuario de seguridad (ID)</label>
+                  <input type="number" required value={asignar.usuario_id} onChange={(e) => setAsignar({ ...asignar, usuario_id: e.target.value })} />
+                </div>
+                <div className="form-field">
+                  <label>Sitio (ID)</label>
+                  <input type="number" required value={asignar.sitio_id} onChange={(e) => setAsignar({ ...asignar, sitio_id: e.target.value })} />
+                </div>
+              </div>
+              <button type="submit" className="btn-primary">Asignar</button>
+              {msgAsignar && <div className={msgAsignar.includes('realizada') ? 'success-msg' : 'error-msg'}>{msgAsignar}</div>}
+            </form>
+          </div>
 
-        <div className="card" style={{ padding: 24 }}>
-          <h2 className="section-title">Personal de seguridad</h2>
-          <table>
-            <thead>
-              <tr><th>ID</th><th>Nombre</th><th>Email</th><th>Sitios</th></tr>
-            </thead>
-            <tbody>
-              {seguridad.map((u) => (
-                <tr key={u.id}>
-                  <td>{u.id}</td>
-                  <td>{u.nombre}</td>
-                  <td>{u.email}</td>
-                  <td>{(u.sitios || []).map((s) => s.nombre || s.sitio_id).join(', ') || 'Ninguno'}</td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
+          <div className="card admin-panel admin-panel-wide">
+            <h2 className="section-title">Sitios registrados</h2>
+            <div className="table-wrap">
+              <table>
+                <thead>
+                  <tr><th>ID</th><th>Nombre</th><th>Aforo</th><th>ESP8266</th><th>ESP32-CAM</th></tr>
+                </thead>
+                <tbody>
+                  {sitios.map((s) => (
+                    <tr key={s.id}>
+                      <td><span className="table-id">{s.id}</span></td>
+                      <td><strong>{s.nombre}</strong></td>
+                      <td><span className="table-aforo">{s.aforo_actual}/{s.aforo_maximo}</span></td>
+                      <td><code className="table-code">{s.esp8266_client_id || '—'}</code></td>
+                      <td><code className="table-code">{s.esp32cam_client_id || '—'}</code></td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          </div>
+
+          <div className="card admin-panel admin-panel-wide">
+            <h2 className="section-title">Personal de seguridad</h2>
+            <div className="table-wrap">
+              <table>
+                <thead>
+                  <tr><th>ID</th><th>Nombre</th><th>Email</th><th>Sitio asignado</th></tr>
+                </thead>
+                <tbody>
+                  {seguridad.map((u) => (
+                    <tr key={u.id}>
+                      <td><span className="table-id">{u.id}</span></td>
+                      <td><strong>{u.nombre}</strong></td>
+                      <td>{u.email}</td>
+                      <td>{(u.sitios || []).map((s) => s.nombre || s.sitio_id).join(', ') || '—'}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          </div>
         </div>
       </main>
     </>

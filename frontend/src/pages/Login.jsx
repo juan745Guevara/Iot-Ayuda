@@ -38,21 +38,51 @@ export default function Login() {
 
   return (
     <>
-      <Header>
-        <Link to="/">← Volver al inicio</Link>
+      <Header subtitle="Acceso restringido">
+        <Link to="/" className="btn-nav btn-nav-outline">Volver al inicio</Link>
       </Header>
       <div className="login-page">
-        <div className="card form-card">
-          <h2>Iniciar sesión</h2>
-          <p>Acceso para personal de seguridad y administradores.</p>
-          <form onSubmit={handleSubmit}>
-            <label>Email</label>
-            <input type="email" value={email} onChange={(e) => setEmail(e.target.value)} required placeholder="seg.ahuashiyacu@iot.local" />
-            <label>Contraseña</label>
-            <input type="password" value={password} onChange={(e) => setPassword(e.target.value)} required />
-            <button type="submit" className="full-width">Entrar</button>
-            {error && <div className="error-msg">{error}</div>}
-          </form>
+        <div className="login-grid">
+          <div className="login-branding">
+            <span className="eyebrow eyebrow-light">Panel operativo</span>
+            <h2>Gestión de aforo y seguridad</h2>
+            <p>
+              Acceso exclusivo para administradores y personal de seguridad
+              asignado a cada sitio turístico.
+            </p>
+            <ul className="login-features">
+              <li>Cámara en vivo por sitio</li>
+              <li>Alertas de capacidad</li>
+              <li>Control de alarma remota</li>
+            </ul>
+          </div>
+          <div className="card form-card login-card">
+            <h2>Iniciar sesión</h2>
+            <p>Ingresa tus credenciales institucionales.</p>
+            <form onSubmit={handleSubmit}>
+              <label htmlFor="email">Correo electrónico</label>
+              <input
+                id="email"
+                type="email"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                required
+                placeholder="seg.ahuashiyacu@iot.local"
+                autoComplete="email"
+              />
+              <label htmlFor="password">Contraseña</label>
+              <input
+                id="password"
+                type="password"
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                required
+                autoComplete="current-password"
+              />
+              <button type="submit" className="full-width btn-primary">Entrar al panel</button>
+              {error && <div className="error-msg" role="alert">{error}</div>}
+            </form>
+          </div>
         </div>
       </div>
     </>

@@ -1,0 +1,80 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Login — Aforo Turístico</title>
+  <link rel="stylesheet" href="/css/styles.css">
+</head>
+<body>
+
+<header>
+  <div class="brand">
+    <div class="brand-icon">🌿</div>
+    <span>Aforo Turístico</span>
+  </div>
+  <nav><a href="/">← Volver al inicio</a></nav>
+</header>
+
+<div class="login-page">
+  <div class="card form-card">
+    <h2>Iniciar sesión</h2>
+    <p>Acceso para personal de seguridad y administradores.</p>
+
+    <form id="form-login">
+      <label>Email</label>
+      <input type="email" id="email" required placeholder="seguridad@iot.local">
+
+      <label>Contraseña</label>
+      <input type="password" id="password" required placeholder="••••••••">
+
+      <button type="submit" class="full-width">Entrar</button>
+      <div id="error" class="error-msg"></div>
+    </form>
+  </div>
+</div>
+
+<script src="/js/common.js"></script>
+<script>
+const usuario = getUsuario();
+if (usuario) {
+  if (usuario.rol === 'admin') window.location.href = '/admin/index.html';
+  else window.location.href = '/seguridad/dashboard.html';
+}
+
+document.getElementById('form-login').addEventListener('submit', async (e) => {
+  e.preventDefault();
+  const errorEl = document.getElementById('error');
+  errorEl.textContent = '';
+
+  const email = document.getElementById('email').value;
+  const password = document.getElementById('password').value;
+
+  try {
+    const res = await fetch('/api/auth/login', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ email, password }),
+    });
+
+    const data = await res.json();
+    if (!res.ok) {
+      errorEl.textContent = data.error || 'Error al iniciar sesión';
+      return;
+    }
+
+    guardarSesion(data.token, data.usuario);
+
+    if (data.usuario.rol === 'admin') {
+      window.location.href = '/admin/index.html';
+    } else {
+      window.location.href = '/seguridad/dashboard.html';
+    }
+  } catch {
+    errorEl.textContent = 'No se pudo conectar al servidor';
+  }
+});
+</script>
+
+</body>
+</html>

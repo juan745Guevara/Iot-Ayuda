@@ -1,61 +1,38 @@
 const express = require('express');
 const http = require('http');
 const { Server } = require('socket.io');
-const mqtt = require('mqtt');
+const config = require('./config');
+const { initMqtt } = require('./mqtt/client');
+const { initSocket } = require('./socket');
+const authRoutes = require('./routes/auth');
+const sitiosRoutes = require('./routes/sitios');
+const crearRouterCamara = require('./routes/camara');
+const adminRoutes = require('./routes/admin');
+const seguridadRoutes = require('./routes/seguridad');
 
 const app = express();
 const server = http.createServer(app);
 const io = new Server(server);
 
-//================== MQTT ==================
-
-// Dirección del broker MQTT
-const MQTT_BROKER = "mqtt://localhost:1883"; // Cambia la IP
-
-const client = mqtt.connect(MQTT_BROKER);
-
-client.on("connect", () => {
-    console.log("✅ Conectado al Broker MQTT");
-    client.subscribe("aforo");
-});
-
-client.on("message", (topic, message) => {
-   
-    if (topic == "aforo") {
-        const data = message.toString();
-        io.emit("aforo", { message: data});
-    }
-});
-
-client.on("error", (err) => {
-    console.log("Error MQTT:", err.message);
-});
-
-//==========================================
-
-// Servir archivos
+app.use(express.json({ limit: '1mb' }));
 app.use(express.static('public'));
 
-// Socket.IO
-io.on('connection', (socket) => {
+// API REST
+app.use('/api/auth', authRoutes);
+app.use('/api/sitios', sitiosRoutes);
+app.use('/api/camara', crearRouterCamara(io));
+app.use('/api/admin', adminRoutes);
 
-    console.log(`Usuario conectado: ${socket.id}`);
+app.use('/api/seguridad', seguridadRoutes);
 
-    // Si el navegador quiere publicar en MQTT
-    socket.on("alarma", (data) => {
-        client.publish("alarma", data.message);
+// MQTT + Socket.IO
+initMqtt(io);
+initSocket(io);
 
-    });
-
-    socket.on('disconnect', () => {
-        console.log('Usuario desconectado');
-    });
-
-});
-
-// Puerto
-const PORT = 3000;
-
-server.listen(PORT, () => {
-    console.log(`Servidor ejecutándose en http://localhost:${PORT}`);
+server.listen(config.port, () => {
+  console.log(`Servidor ejecutándose en http://localhost:${config.port}`);
+  console.log('Panel público: /');
+  console.log('Login seguridad: /login.html');
+  console.log('Dashboard seguridad: /seguridad/dashboard.html');
+  console.log('Panel admin: /admin/index.html');
 });

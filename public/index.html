@@ -1,104 +1,85 @@
 <!DOCTYPE html>
 <html lang="es">
 <head>
-    <meta charset="UTF-8">
-    <title>Monitor MQTT</title>
-
-    <!-- Socket.IO -->
-    <script src="/socket.io/socket.io.js"></script>
-
-    <style>
-        body{
-            font-family: Arial;
-            margin:40px;
-            background:#f5f5f5;
-        }
-
-        h1{
-            color:#333;
-        }
-
-        .card{
-            background:white;
-            padding:20px;
-            border-radius:10px;
-            width:400px;
-            box-shadow:0px 0px 10px rgba(0,0,0,.2);
-        }
-
-        input{
-            width:100%;
-            padding:8px;
-            margin:5px 0;
-        }
-
-        button{
-            padding:10px 20px;
-            cursor:pointer;
-        }
-
-        #mensajes{
-            margin-top:20px;
-            background:#eee;
-            padding:10px;
-            height:250px;
-            overflow:auto;
-        }
-    </style>
-
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Aforo Turístico — Tingo María</title>
+  <link rel="stylesheet" href="/css/styles.css">
+  <script src="/socket.io/socket.io.js"></script>
 </head>
 <body>
 
-<div class="card">
+<header>
+  <div class="brand">
+    <div class="brand-icon">🌿</div>
+    <span>Aforo Turístico</span>
+  </div>
+  <nav>
+    <a href="/login.html" class="btn-nav">Acceso Seguridad</a>
+  </nav>
+</header>
 
-<h1>Monitor MQTT</h1>
+<section class="hero">
+  <div class="hero-content">
+    <h1>Monitoreo de aforo en tiempo real</h1>
+    <p>Consulta la ocupación actual de los sitios turísticos de la región</p>
+  </div>
+</section>
 
-<h3>Datos recibidos</h3>
+<main class="with-hero">
+  <div class="stats-bar" id="stats-bar"></div>
 
-<div id="mensajes"></div>
+  <div class="toolbar-busqueda">
+    <div class="busqueda-wrapper">
+      <span class="icono-busqueda">🔍</span>
+      <input type="search" id="busqueda" placeholder="Buscar por nombre o ubicación..." autocomplete="off">
+    </div>
+    <div class="filtros-estado">
+      <button class="filtro-btn activo" data-filtro="todos">Todos</button>
+      <button class="filtro-btn" data-filtro="verde">Disponible</button>
+      <button class="filtro-btn" data-filtro="amarillo">Moderado</button>
+      <button class="filtro-btn" data-filtro="rojo">Lleno</button>
+    </div>
+    <div class="contador-resultados" id="contador-resultados"></div>
+  </div>
 
-<hr>
+  <div id="sitios" class="grid">
+    <div class="empty-state" id="empty-state" style="display:none">
+      <div class="empty-icon">🔎</div>
+      <h3>No se encontraron sitios</h3>
+      <p>Prueba con otro nombre, ubicación o filtro de ocupación.</p>
+    </div>
+  </div>
+</main>
 
-<h3>Enviar MQTT</h3>
-
-
-<input id="mensaje" placeholder="Mensaje">
-
-<button onclick="enviar()">Alerta</button>
-
-</div>
-
+<script src="/js/common.js"></script>
 <script>
-
 const socket = io();
+const contenedor = document.getElementById('sitios');
+const emptyState = document.getElementById('empty-state');
+const sitiosMap = {};
+let todosLosSitios = [];
 
-const mensajes = document.getElementById("mensajes");
+async function cargarSitios() {
+  const res = await fetch('/api/sitios');
+  const sitios = await res.json();
+  todosLosSitios = sitios;
 
-// Cuando llega un mensaje MQTT desde el servidor
-socket.on("aforo",(data)=>{
-    
-    mensajes.innerHTML += `
-        <p>
-            ${data.message}
-        </p>
-    `;
+  sitios.forEach(s => { sitiosMap[s.id] = s; });
 
-    mensajes.scrollTop = mensajes.scrollHeight;
+  const cardsHtml = sitios.map(s => renderSitioCard(s)).join('');
+  contenedor.insertAdjacentHTML('afterbegin', cardsHtml);
 
-});
-
-
-// Enviar un mensaje MQTT
-function enviar(){
-
-    const mensaje = document.getElementById("mensaje").value;
-
-    socket.emit("alarma",{
-        message:mensaje
-    });
-
+  actualizarStatsBar(sitios);
+  initBuscador(sitios.length);
+  socket.emit('join_todos_sitios');
 }
 
+socket.on('aforo', (data) => {
+  actualizarCardAforo(data.sitio_id, data.aforo_actual, sitiosMap);
+});
+
+cargarSitios();
 </script>
 
 </body>

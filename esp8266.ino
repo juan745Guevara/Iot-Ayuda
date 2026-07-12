@@ -1,52 +1,50 @@
 /****************************************************
  ESP8266
  Control de aforo con 2 puertas independientes
- Sensores FC-51
+ Sensores FC-51 — Multi-sitio (topics MQTT por sitio_id)
 ****************************************************/
 
-//-------------------- PINES -------------------------
 #include <ESP8266WiFi.h>
 #include <PubSubClient.h>
 
-const char* ssid = "PAULPT 2.4Ghz";
-const char* password = "MATT5626";
+//-------------------- CONFIGURACIÓN -----------------
+const char* ssid = "TU_RED_WIFI";
+const char* password = "TU_CONTRASEÑA";
 
 const char* mqtt_server = "192.168.100.3";
+
+// ID del sitio turístico (debe coincidir con la tabla sitios en PostgreSQL)
+const int SITIO_ID = 1;
+
+// Client ID único (debe coincidir con esp8266_client_id en la BD)
+const char* CLIENT_ID = "esp8266-sitio-1";
+
+// Topics MQTT: aforo/{sitio_id}/aforo | alarma | setear
+char topicAforo[32];
+char topicAlarma[32];
+char topicSetear[32];
 
 WiFiClient espClient;
 PubSubClient client(espClient);
 
 #define P1_A 5
 #define P1_B 4
-
 #define P2_A 14
 #define P2_B 12
-
 #define BUZZER 13
 
 //----------------------------------------------------
 
 int aforo = 0;
 int aforo_actual = 0;
-
 const unsigned long TIMEOUT = 8000;
 
-enum Estado
-{
-  IDLE,
-  A_FIRST,
-  B_FIRST,
-  BOTH_FROM_A,
-  BOTH_FROM_B
-};
+enum Estado { IDLE, A_FIRST, B_FIRST, BOTH_FROM_A, BOTH_FROM_B };
 
-struct Puerta
-{
+struct Puerta {
   byte pinA;
   byte pinB;
-
   Estado estado;
-
   unsigned long tiempo;
 };
 
@@ -55,223 +53,134 @@ Puerta puerta2 = {P2_A, P2_B, IDLE, 0};
 
 //----------------------------------------------------
 
-bool sensorA(Puerta &p)
-{
-  return digitalRead(p.pinA)==LOW;   // FC51 activo LOW
+void construirTopics() {
+  snprintf(topicAforo, sizeof(topicAforo), "aforo/%d/aforo", SITIO_ID);
+  snprintf(topicAlarma, sizeof(topicAlarma), "aforo/%d/alarma", SITIO_ID);
+  snprintf(topicSetear, sizeof(topicSetear), "aforo/%d/setear", SITIO_ID);
 }
 
-bool sensorB(Puerta &p)
-{
-  return digitalRead(p.pinB)==LOW;
+bool sensorA(Puerta &p) {
+  return digitalRead(p.pinA) == LOW;
 }
 
-//----------------------------------------------------
+bool sensorB(Puerta &p) {
+  return digitalRead(p.pinB) == LOW;
+}
 
-void procesarPuerta(Puerta &p)
-{
+void procesarPuerta(Puerta &p) {
   bool A = sensorA(p);
   bool B = sensorB(p);
 
-  switch(p.estado)
-  {
-
-    //---------------- IDLE --------------------------
-
+  switch (p.estado) {
     case IDLE:
-
-      if(A && !B)
-      {
-        p.estado=A_FIRST;
-        p.tiempo=millis();
-      }
-
-      else if(B && !A)
-      {
-        p.estado=B_FIRST;
-        p.tiempo=millis();
-      }
-
-    break;
-
-    //---------------- A PRIMERO ---------------------
+      if (A && !B) { p.estado = A_FIRST; p.tiempo = millis(); }
+      else if (B && !A) { p.estado = B_FIRST; p.tiempo = millis(); }
+      break;
 
     case A_FIRST:
-
-      if(A && B)
-      {
-        p.estado=BOTH_FROM_A;
-      }
-
-      else if(!A)
-      {
-        p.estado=IDLE;
-      }
-
-    break;
-
-    //---------------- B PRIMERO ---------------------
+      if (A && B) p.estado = BOTH_FROM_A;
+      else if (!A) p.estado = IDLE;
+      break;
 
     case B_FIRST:
-
-      if(A && B)
-      {
-        p.estado=BOTH_FROM_B;
-      }
-
-      else if(!B)
-      {
-        p.estado=IDLE;
-      }
-
-    break;
-
-    //---------------- ENTRANDO ----------------------
+      if (A && B) p.estado = BOTH_FROM_B;
+      else if (!B) p.estado = IDLE;
+      break;
 
     case BOTH_FROM_A:
-
-      if(!A && B)
-      {
-        // esperando liberar B
-      }
-
-      if(!A && !B)
-      {
+      if (!A && !B) {
         aforo++;
-
         Serial.print("Ingreso   Aforo = ");
         Serial.println(aforo);
-
-        p.estado=IDLE;
+        p.estado = IDLE;
       }
-
-    break;
-
-    //---------------- SALIENDO ----------------------
+      break;
 
     case BOTH_FROM_B:
-
-      if(A && !B)
-      {
-      }
-
-      if(!A && !B)
-      {
-        if(aforo>0)
-            aforo--;
-
+      if (!A && !B) {
+        if (aforo > 0) aforo--;
         Serial.print("Salida    Aforo = ");
         Serial.println(aforo);
-
-        p.estado=IDLE;
+        p.estado = IDLE;
       }
-
-    break;
+      break;
   }
 
-  //---------------- Timeout -------------------------
-
-  if(p.estado!=IDLE)
-  {
-      if(millis()-p.tiempo>TIMEOUT)
-      {
-          // Persona detenida entre sensores
-
-          if(!A || !B)
-          {
-              p.estado=IDLE;
-          }
-
-          // Si sigue ocupando ambos sensores
-          // simplemente espera hasta que se mueva.
-      }
+  if (p.estado != IDLE && millis() - p.tiempo > TIMEOUT) {
+    if (!A || !B) p.estado = IDLE;
   }
 }
 
-//----------------------------------------------------
-
-//RETORNO
 void callback(char* topic, byte* payload, unsigned int length) {
   String canal = String(topic);
-  if (canal == "alarma") {
-      digitalWrite(BUZZER,HIGH);
-      delay(2000);
-      digitalWrite(BUZZER,LOW);
+
+  if (canal == topicAlarma) {
+    digitalWrite(BUZZER, HIGH);
+    delay(2000);
+    digitalWrite(BUZZER, LOW);
   }
 
-  if (canal == "setear") {
-    aforo_actual = atoi((char*)payload);
+  if (canal == topicSetear) {
+    char buf[16];
+    unsigned int len = min(length, (unsigned int)(sizeof(buf) - 1));
+    memcpy(buf, payload, len);
+    buf[len] = '\0';
+    aforo_actual = atoi(buf);
     aforo = aforo_actual;
-    client.publish("aforo", String(aforo).c_str());
+    client.publish(topicAforo, String(aforo).c_str());
   }
-
 }
 
-
-void reconnect()
-{
-  while (!client.connected())
-  {
+void reconnect() {
+  while (!client.connected()) {
     Serial.print("Conectando MQTT...");
 
-    if (client.connect("ESP8266Client"))
-    {
+    if (client.connect(CLIENT_ID)) {
       Serial.println("Conectado");
-
-      client.subscribe("alarma");
-      client.subscribe("reinicio");
-    }
-    else
-    {
+      client.subscribe(topicAlarma);
+      client.subscribe(topicSetear);
+    } else {
       Serial.print("Error MQTT: ");
       Serial.println(client.state());
-
       delay(5000);
     }
   }
 }
 
-void setup()
-{
+void setup() {
   Serial.begin(115200);
+  construirTopics();
 
-  pinMode(P1_A,INPUT_PULLUP);
-  pinMode(P1_B,INPUT_PULLUP);
-
-  pinMode(P2_A,INPUT_PULLUP);
-  pinMode(P2_B,INPUT_PULLUP);
-
+  pinMode(P1_A, INPUT_PULLUP);
+  pinMode(P1_B, INPUT_PULLUP);
+  pinMode(P2_A, INPUT_PULLUP);
+  pinMode(P2_B, INPUT_PULLUP);
   pinMode(BUZZER, OUTPUT);
+  digitalWrite(BUZZER, LOW);
 
   WiFi.begin(ssid, password);
-  
   while (WiFi.status() != WL_CONNECTED) {
     delay(500);
     Serial.print(".");
   }
+  Serial.println();
   Serial.println(WiFi.localIP());
-  Serial.println(WiFi.gatewayIP());
-  Serial.println("Conectado a la red!");
-  client.setServer(mqtt_server, 1883); // Puerto MQTT por defecto
+  Serial.print("Sitio ID: ");
+  Serial.println(SITIO_ID);
+
+  client.setServer(mqtt_server, 1883);
   client.setCallback(callback);
-  digitalWrite(BUZZER, LOW);
-  
 }
 
-//----------------------------------------------------
-
-void loop()
-{
-
-  if (!client.connected()) {
-    reconnect();
-  }
-
+void loop() {
+  if (!client.connected()) reconnect();
   client.loop();
 
   procesarPuerta(puerta1);
   procesarPuerta(puerta2);
-  if(aforo_actual != aforo) {
+
+  if (aforo_actual != aforo) {
     aforo_actual = aforo;
-    client.publish("aforo", String(aforo_actual).c_str());
+    client.publish(topicAforo, String(aforo_actual).c_str());
   }
 }

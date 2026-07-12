@@ -1,21 +1,29 @@
 {
-  "name": "aforo-tingo-maria",
-  "version": "1.0.0",
-  "description": "Control de aforo mediante microcontroladores , ESP32 . ",
+  "name": "iot-ayuda",
+  "version": "2.0.0",
+  "description": "Sistema multi-sitio de monitoreo de aforo turístico con ESP8266, ESP32-CAM, MQTT y PostgreSQL",
   "keywords": [
-    "Microcontroladores",
-    "ESP32"
+    "IoT",
+    "ESP8266",
+    "ESP32-CAM",
+    "aforo",
+    "turismo"
   ],
   "license": "ISC",
-  "author": "X",
+  "author": "juan745Guevara",
   "type": "commonjs",
   "main": "index.js",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "start": "node index.js",
+    "db:seed": "node db/seed.js"
   },
   "dependencies": {
+    "bcryptjs": "^3.0.2",
+    "dotenv": "^17.2.1",
     "express": "^5.2.1",
+    "jsonwebtoken": "^9.0.2",
     "mqtt": "^5.15.2",
+    "pg": "^8.16.3",
     "socket.io": "^4.8.3"
   }
 }

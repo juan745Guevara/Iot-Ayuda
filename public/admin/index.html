@@ -1,0 +1,195 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Admin — Aforo Turístico</title>
+  <link rel="stylesheet" href="/css/styles.css">
+</head>
+<body>
+
+<header>
+  <div class="brand">
+    <div class="brand-icon">⚙️</div>
+    <span>Administración</span>
+  </div>
+  <nav>
+    <a href="/seguridad/dashboard.html">Dashboard</a>
+    <a href="#" onclick="cerrarSesion(); return false;">Cerrar sesión</a>
+  </nav>
+</header>
+
+<main class="admin-grid">
+  <div class="card" style="padding: 24px;">
+    <h2 class="section-title">Crear sitio turístico</h2>
+    <form id="form-sitio">
+      <label>Nombre</label>
+      <input id="nombre" required>
+
+      <label>Ubicación</label>
+      <input id="ubicacion">
+
+      <label>Aforo máximo</label>
+      <input id="aforo_maximo" type="number" value="50">
+
+      <label>ESP8266 Client ID</label>
+      <input id="esp8266_client_id" placeholder="esp8266-sitio-4">
+
+      <label>ESP32-CAM Client ID</label>
+      <input id="esp32cam_client_id" placeholder="esp32cam-sitio-4">
+
+      <button type="submit">Crear sitio</button>
+      <div id="msg-sitio" class="error-msg"></div>
+    </form>
+  </div>
+
+  <div class="card" style="padding: 24px;">
+    <h2 class="section-title">Asignar seguridad a sitio</h2>
+    <form id="form-asignar">
+      <label>Usuario de seguridad (ID)</label>
+      <input id="usuario_id" type="number" required>
+
+      <label>Sitio (ID)</label>
+      <input id="sitio_id" type="number" required>
+
+      <button type="submit">Asignar</button>
+      <div id="msg-asignar" class="error-msg"></div>
+    </form>
+  </div>
+
+  <div class="card" style="padding: 24px;">
+    <h2 class="section-title">Sitios registrados</h2>
+    <div id="tabla-sitios">Cargando...</div>
+  </div>
+
+  <div class="card" style="padding: 24px;">
+    <h2 class="section-title">Personal de seguridad</h2>
+    <div id="tabla-seguridad">Cargando...</div>
+  </div>
+</main>
+
+<script src="/js/common.js"></script>
+<script>
+const token = getToken();
+const usuario = getUsuario();
+
+if (!token || !usuario || usuario.rol !== 'admin') {
+  window.location.href = '/login.html';
+}
+
+async function cargarSitios() {
+  const res = await fetch('/api/admin/sitios', { headers: authHeaders() });
+  const sitios = await res.json();
+
+  document.getElementById('tabla-sitios').innerHTML = `
+    <table>
+      <thead>
+        <tr>
+          <th>ID</th><th>Nombre</th><th>Aforo</th><th>ESP8266</th><th>ESP32-CAM</th><th>Activo</th>
+        </tr>
+      </thead>
+      <tbody>
+        ${sitios.map(s => `
+          <tr>
+            <td>${s.id}</td>
+            <td>${s.nombre}</td>
+            <td>${s.aforo_actual}/${s.aforo_maximo}</td>
+            <td>${s.esp8266_client_id || '-'}</td>
+            <td>${s.esp32cam_client_id || '-'}</td>
+            <td>${s.activo ? 'Sí' : 'No'}</td>
+          </tr>
+        `).join('')}
+      </tbody>
+    </table>
+  `;
+}
+
+async function cargarSeguridad() {
+  const res = await fetch('/api/admin/usuarios-seguridad', { headers: authHeaders() });
+  const usuarios = await res.json();
+
+  document.getElementById('tabla-seguridad').innerHTML = `
+    <table>
+      <thead>
+        <tr><th>ID</th><th>Nombre</th><th>Email</th><th>Sitios asignados</th></tr>
+      </thead>
+      <tbody>
+        ${usuarios.map(u => `
+          <tr>
+            <td>${u.id}</td>
+            <td>${u.nombre}</td>
+            <td>${u.email}</td>
+            <td>${(u.sitios || []).map(s => s.nombre || s.sitio_id).join(', ') || 'Ninguno'}</td>
+          </tr>
+        `).join('')}
+      </tbody>
+    </table>
+  `;
+}
+
+document.getElementById('form-sitio').addEventListener('submit', async (e) => {
+  e.preventDefault();
+  const msg = document.getElementById('msg-sitio');
+  msg.textContent = '';
+  msg.style.color = '#c0392b';
+
+  const body = {
+    nombre: document.getElementById('nombre').value,
+    ubicacion: document.getElementById('ubicacion').value,
+    aforo_maximo: parseInt(document.getElementById('aforo_maximo').value, 10),
+    esp8266_client_id: document.getElementById('esp8266_client_id').value || null,
+    esp32cam_client_id: document.getElementById('esp32cam_client_id').value || null,
+  };
+
+  const res = await fetch('/api/admin/sitios', {
+    method: 'POST',
+    headers: authHeaders(),
+    body: JSON.stringify(body),
+  });
+
+  const data = await res.json();
+  if (!res.ok) {
+    msg.textContent = data.error || 'Error al crear';
+    return;
+  }
+
+  msg.style.color = '#27ae60';
+  msg.textContent = `Sitio "${data.nombre}" creado (ID: ${data.id})`;
+  e.target.reset();
+  cargarSitios();
+});
+
+document.getElementById('form-asignar').addEventListener('submit', async (e) => {
+  e.preventDefault();
+  const msg = document.getElementById('msg-asignar');
+  msg.textContent = '';
+  msg.style.color = '#c0392b';
+
+  const body = {
+    usuario_id: parseInt(document.getElementById('usuario_id').value, 10),
+    sitio_id: parseInt(document.getElementById('sitio_id').value, 10),
+  };
+
+  const res = await fetch('/api/admin/asignar-seguridad', {
+    method: 'POST',
+    headers: authHeaders(),
+    body: JSON.stringify(body),
+  });
+
+  const data = await res.json();
+  if (!res.ok) {
+    msg.textContent = data.error || 'Error al asignar';
+    return;
+  }
+
+  msg.style.color = '#27ae60';
+  msg.textContent = 'Asignación realizada';
+  cargarSeguridad();
+});
+
+cargarSitios();
+cargarSeguridad();
+</script>
+
+</body>
+</html>
